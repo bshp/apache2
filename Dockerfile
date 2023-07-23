@@ -6,7 +6,7 @@ ARG TZ=America/North_Dakota/Center
     
 # Initial Setup for httpd
 RUN set -eux; \
-    installPkgs='apache2 ca-certificates curl wget jq'; \
+    installPkgs='apache2 ca-certificates curl jq openssl wget'; \
     ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone; \
     apt-get update; \
     apt-get install -y --no-install-recommends $installPkgs; \
