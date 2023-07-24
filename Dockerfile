@@ -14,6 +14,12 @@ RUN set -eux; \
     openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=localhost -sha256 -days 3650; \
     openssl dhparam -out /etc/ssl/dhparams.pem 2048; \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+    echo "Installed Apache2 Web Server";
+    
+# Scripts and Configs
+COPY ./src/ ./
+
+RUN set -eux; \
     # Ensure apache2 can start
     apache2Test=$(apachectl configtest 2>&1); \
     apache2Starts=$(echo "$apache2Test" | grep 'Syntax OK'); \
@@ -21,10 +27,6 @@ RUN set -eux; \
         echo "Apache2 config test failed: $apache2Test"; \
         exit 1; \
     fi; \
-    echo "Installed Apache2 Web Server";
-    
-# Scripts and Configs
-COPY ./src/ ./
     
 EXPOSE 80 443
     
