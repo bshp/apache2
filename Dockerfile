@@ -26,7 +26,7 @@ RUN set -eux; \
     if [ -z "$apache2Starts" ];then \
         echo "Apache2 config test failed: $apache2Test"; \
         exit 1; \
-    fi; \
+    fi;
     
 EXPOSE 80 443
     
