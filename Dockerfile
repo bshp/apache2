@@ -14,6 +14,7 @@ RUN set -eux; \
     a2dismod info status; \
     openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=localhost -sha256 -days 3650; \
     openssl dhparam -out /etc/ssl/dhparams.pem 2048; \
+    touch /etc/ssl/default.keys; \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
     echo "Installed Apache2 Web Server";
     
