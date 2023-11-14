@@ -1,8 +1,13 @@
-FROM ubuntu:latest
+FROM ubuntu:jammy
     
-MAINTAINER jason.everling@gmail.com
+LABEL org.opencontainers.image.authors="jason.everling@gmail.com"
     
 ARG TZ=America/North_Dakota/Center
+    
+ENV OS_BASE=22.04
+ENV OS_CODENAME=jammy
+ENV OS_VERSION=2204
+ENV OS_TIMEZONE=${TZ}
     
 # Initial Setup for httpd
 RUN set -eux; \
@@ -11,6 +16,7 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends $installPkgs; \
     service apache2 stop && a2enmod rewrite ssl unique_id; \
+    a2enmod headers; \
     a2dismod info status; \
     openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=localhost -sha256 -days 3650; \
     openssl dhparam -out /etc/ssl/dhparams.pem 2048; \
@@ -20,7 +26,7 @@ RUN set -eux; \
     
 # Scripts and Configs
 COPY ./src/ ./
-
+    
 RUN set -eux; \
     # Ensure apache2 can start
     apache2Test=$(apachectl configtest 2>&1); \
