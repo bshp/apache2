@@ -1,29 +1,155 @@
 #!/bin/bash
-set -ex;
     
-APP_NAME=${1:-none};
-UPDATE_PATH=${2:-none};
-CATALINA_HOME=${CATALINA_HOME:-none};
+show_help()
+{
+   echo "Deploy/Update Application";
+   echo
+   echo "Syntax: "
+   echo     "Apache: app-updater -a -n 'myapp' -p '/opt/updates'";
+   echo     "Tomcat: app-updater -t -n 'myapp' -p '/opt/updates'";
+   echo
+   echo "Required:";
+   echo "a|t  Use -a for apache, -t for tomcat"
+   echo "n    Name of the app, e.g myapp.war would be myapp, or for html app, name would be the folder name in update path";
+   echo "p    Path to where the app is located, without the trailing slash, e.g /opt/updates";
+   echo
+   echo "Options:";
+   echo "h    Print Help";
+   echo "f    Fail if updates not found when deployment exists, default: FALSE";
+   echo "x    Disable auto-update";
+   echo
+}
     
-if [[ "${CATALINA_HOME}" != "none" ]];then
-    APP_LOCAL="";
-    APP_PATH="${UPDATE_PATH}/${APP_NAME}.war";
-    DEPLOY_PATH="${CATALINA_HOME}/webapps";
-    if [ -f "${CATALINA_HOME}/webapps/${APP_NAME}.war" ];then
-        APP_LOCAL=$(sha1sum "${DEPLOY_PATH}/${APP_NAME}.war" | awk '{print $1}');
-        echo "App Updater: Application exists, sha1: ${APP_LOCAL}";
-    else 
-        echo "App Updater: Application DOES NOT exist and will be deployed from: ${APP_PATH}";
-    fi
-    if [ -f "${APP_PATH}" ]; then
-        APP_LATEST=$(sha1sum ${APP_PATH} | awk '{print $1}');
-        if [ "${APP_LOCAL}" != "${APP_LATEST}" ];then
-            echo "App Updater: Update is needed, using update path: ${APP_PATH}";
-            cp ${APP_PATH} ${DEPLOY_PATH};
-        else
-            echo "App Updater: Update is not needed";
-        fi;
-    else 
-        echo "App Updater: Application not found at ${APP_PATH}";
+get_signature()
+{
+    option="$1";
+    object="$2";
+    if [ -d "${object}" ];then
+        set_metadata "${option}" "${object}";
+        echo "$(sha1sum ${APP_CACHE}/${APP_NAME}.${option}.metadata | awk '{print $1}')";
+    elif [ -f "${option}" ];then
+        echo "$(sha1sum ${object} | awk '{print $1}')";
+    else
+        echo "0";
     fi;
+}
+    
+set_metadata()
+{
+    option="$1";
+    object="$2";
+    if [ -f "${APP_CACHE}/${APP_NAME}.${option}.metadata" ];then
+        rm "${APP_CACHE}/${APP_NAME}.${option}.metadata";
+    fi;
+    (cd "${object}";
+        for i in *; do 
+            sha1sum "$i"; 
+    done) >> "${APP_CACHE}/${APP_NAME}.${option}.metadata";
+    cd /opt;
+}
+    
+deploy_app()
+{
+    if [ -d "${APP_LATEST}" ];then
+        cp -R ${APP_LATEST}/* ${APP_BASE};
+    else
+        cp -R ${APP_LATEST} ${APP_BASE};
+    fi;
+}
+    
+update_app()
+{
+    if [ "${SIG_LOCAL}" == "${SIG_UPDATE}" ];then
+        echo "App Updater: Update is not needed, deployed: ${SIG_LOCAL}, latest: ${SIG_UPDATE}";
+        exit 0;
+    fi;
+    if [ "${UPDATE_AUTO}" == "TRUE" ];then
+        deploy_app;
+    fi;
+}
+    
+#Static
+APP_CACHE="/var/cache";
+CATALINA_HOME="${CATALINA_HOME:-}";
+BASE_HTML="/var/www/html";
+BASE_TOMCAT="${CATALINA_HOME}/webapps";
+    
+#Dynamic
+APP_BASE="";
+APP_NAME="";
+APP_TYPE="";
+UPDATE_PATH="";
+UPDATE_AUTO="TRUE";
+UPDATE_FAIL="FALSE";
+    
+#Run
+while getopts ":afhtxn:p:" option; do
+    case $option in
+      h)
+        show_help
+        exit;;
+      n)
+        APP_NAME=$OPTARG;;
+      p)
+        UPDATE_PATH=$OPTARG;;
+      f)
+        UPDATE_FAIL="TRUE";;
+      x)
+        UPDATE_AUTO="FALSE";;
+      a)
+        APP_BASE="${BASE_HTML}"
+        APP_TYPE="apache";;
+      t)
+        APP_BASE="${BASE_TOMCAT}/"
+        APP_TYPE="tomcat";;
+      \?)
+        echo "Error: Invalid option, -h for help"
+        exit;;
+    esac
+done
+    
+if [ "${APP_TYPE}" == "" ];then
+    echo "App Updater: Required App Type is not set, use -a for apache or -t for tomcat, -h for help";
+    exit 22;
+fi;
+if [ "${APP_TYPE}" == "tomcat" ] && [ "${CATALINA_HOME}" == "" ];then
+    echo "App Updater: CATALINA_HOME is undefined";
+    exit 5;
+fi;
+if [ "${APP_NAME}" == "" ];then
+    echo "App Updater: Required App Name is not set, use -n to set the name, -h for help";
+    exit 22;
+fi;
+if [ "${UPDATE_PATH}" == "" ];then
+    echo "App Updater: Required App Path is not set, use -p to set the path to application, -h for help";
+    exit 22;
+fi;
+if [ "${APP_TYPE}" == "apache" ];then
+    APP_DEPLOY="${BASE_HTML}";
+    APP_LATEST="${UPDATE_PATH}/${APP_NAME}/";
+elif [ "${APP_TYPE}" == "tomcat" ];then
+    APP_DEPLOY="${BASE_TOMCAT}/${APP_NAME}.war";
+    APP_LATEST="${UPDATE_PATH}/${APP_NAME}.war";
+else
+    echo "Unknown application type";
+    exit 5;
+fi;
+
+SIG_LOCAL=$(get_signature "local" "${APP_DEPLOY}");
+SIG_UPDATE=$(get_signature "update" "${APP_LATEST}");
+
+if [ "${SIG_LOCAL}" == "0" ] && [ "${SIG_UPDATE}" == "0" ];then
+    echo "App Updater: Application has not been deployed and was not found in ${UPDATE_PATH}";
+    exit 2;
+elif [ "${SIG_LOCAL}" == "0" ] && [ "${SIG_UPDATE}" != "0" ];then
+    echo "App Updater: Application has not been deployed, deploying from ${UPDATE_PATH}";
+    deploy_app;
+elif [ "${SIG_LOCAL}" != "0" ] && [ "${SIG_UPDATE}" == "0" ];then
+    echo "App Updater: Application is deployed but update is empty, failure enabled: ${UPDATE_FAIL}";
+    if [ "${UPDATE_FAIL}" == "TRUE" ];then
+        exit 2;
+    fi;
+else
+    echo "App Updater: Auto-update is enabled: ${UPDATE_AUTO}, deployed: ${SIG_LOCAL}, latest: ${SIG_UPDATE}";
+    update_app;
 fi;

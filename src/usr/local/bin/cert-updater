@@ -1,60 +1,144 @@
 #!/bin/bash
-set -ex;
-    
 ############
+set -eux;
+show_help()
+{
+   echo "Update CA Trust Stores";
+   echo
+   echo "Syntax: cert-updater [-h|a|o|j|k|f] [-p|c]";
+   echo
+   echo "Default:";
+   echo "    Auto-update all stores and generate new keypair if needed";
+   echo "    Filter: *_CA.crt";
+   echo
+   echo "Options:";
+   echo "h    Print Help";
+   echo "a    Auto-update, update OS, and if JAVA_HOME deetected update cacerts, generates new key if default keys found";
+   echo "o    Update OS Certificate Store";
+   echo "j    Update Java Certificate Store";
+   echo "k    Generate new server certificate and key";
+   echo "p    Path or URL to where the CA Certs are to add, you can use -f option to filter";
+   echo "f    Filter for CA cert import, default: *_CA.crt";
+   echo "c    Subject name for new localhost certificate and key";
+   echo
+}
     
-URL=${1:-none};
-SUBJECT=${2:-localhost};
+URL="";
+SUBJECT="localhost";
 JAVA_HOME=${JAVA_HOME:-none};
+UPDATE="AUTO";
+FILTER="*_CA.crt";
     
-## Keygen ##
-echo "Keygen: Checking for certificate generation";
+function auto_update()
+{
+   update_keys;
+   update_os;
+   update_jvm;
+   cleanup;
+}
     
-if [[ -f "/etc/ssl/default.keys" ]]; then
-    echo "Keygen: Default build keys detected, new pair will be generated";
-    openssl dhparam -out /etc/ssl/dhparams.pem 2048;
-    openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=${SUBJECT} -sha256 -days 3650;
-    rm /etc/ssl/default.keys;
-fi
+function update_keys()
+{
+    if [ -f "/etc/ssl/default.keys" ];then
+        rm /etc/ssl/default.keys;
+        openssl dhparam -out /etc/ssl/dhparams.pem 3072;
+        openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=${SUBJECT} -sha256 -days 3650;
+        PEM_SHA1=$(openssl x509 -noout -fingerprint -sha1 -in /etc/ssl/server.pem | cut -f2 -d"=" | sed "s/://g" | awk '{print tolower($0)}');
+        echo "Cert Updater: Keygen finished, Thumbprint: $PEM_SHA1";
+    fi;
+}
     
-PEM_SHA1=$(openssl x509 -noout -fingerprint -sha1 -in /etc/ssl/server.pem | cut -f2 -d"=" | sed "s/://g" | awk '{print tolower($0)}');
-echo "Keygen: Finished, Certificate Thumbprint: $PEM_SHA1";
+function update_jvm()
+{
+    get_certs;
+    if [ "${JAVA_HOME}" != "none" ];then
+        for CA_CRT in /usr/local/share/ca-certificates/*.crt; do
+            CA_NAME=$(openssl x509 -noout -subject -nameopt multiline -in $CA_CRT | sed -n 's/ *commonName *= //p');
+            CA_EXISTS=$(${JAVA_HOME}/bin/keytool -list -cacerts -storepass changeit -alias "$CA_NAME" | echo $?);
+            if [ "$CA_EXISTS" -eq 0 ];then
+                ${JAVA_HOME}/bin/keytool -import -trustcacerts -cacerts \
+                    -storepass changeit -noprompt -alias "$CA_NAME" -file $CA_CRT >/dev/null 2>&1 \
+                    | echo "Cert Updater: Added certificate to cacert, $CA_CRT";
+            else 
+                echo "Cert Updater: Certificate ${CA_NAME} already exists, not adding";
+            fi;
+        done;
+    else 
+        echo "Cert Updater: JAVA_HOME is undefined in environment, nothing to import";
+    fi;
+    if [ "${UPDATE}" != "AUTO" ];then
+        cleanup;
+    fi;
+}
     
-## CA Certificates ##
-echo "CA Certificates: Checking for CA Import";
-if [[ "${URL}" != "none" ]];then
-    IS_URL='^(http|https)';
-    echo "CA Certificates: The following location will be searched ${URL}";
-    cd /usr/local/share/ca-certificates;
-    if [[ ${URL} =~ ${IS_URL} ]];then
-        wget -r -nH -A *_CA.crt ${URL};
-    else
-        if [[ ! -d ${URL} ]];then
-            echo "CA Certificates: ${URL} does not exist, nothing to import";
-        else 
-            cp -R ${URL} /usr/local/share/ca-certificates/;
-        fi
-    fi
-    HAS_CRTS=$(ls /usr/local/share/ca-certificates/*.crt 2> /dev/null | wc -l);
-    if [[ "${HAS_CRTS}" -ne 0 ]];then
-        if [[ "${JAVA_HOME}" != "none" ]];then
-            for CA_CRT in /usr/local/share/ca-certificates/*.crt; do
-                CA_NAME=$(openssl x509 -noout -subject -nameopt multiline -in $CA_CRT | sed -n 's/ *commonName *= //p');
-                CA_EXISTS=$(${JAVA_HOME}/bin/keytool -list -cacerts -storepass changeit -alias "$CA_NAME" | echo $?);
-                if [ "$CA_EXISTS" -eq 0 ];then
-                    ${JAVA_HOME}/bin/keytool -import -trustcacerts -cacerts \
-                        -storepass changeit -noprompt -alias "$CA_NAME" -file $CA_CRT >/dev/null 2>&1 \
-                        | echo "CA Certificates: Added certificate to cacert, $CA_CRT";
-                else 
-                    echo "CA Certificates: Certificate ${CA_NAME} already exists, not adding";
-                fi;
-            done;
-        fi;
+function update_os()
+{
+    get_certs;
+    certs=$(ls /usr/local/share/ca-certificates/*.crt 2> /dev/null | wc -l);
+    if [ "${certs}" -ne 0 ];then
         update-ca-certificates;
     else
-        echo "CA Certificates: Could not find any certificates to import, ensure your certificates have the .crt extension";
+        echo "Cert Updater: No certificates were found to import";
     fi;
+    if [ "${UPDATE}" != "AUTO" ];then
+        cleanup;
+    fi;
+}
+    
+function get_certs()
+{
+    ishttp='^(http|https)';
+    cd /usr/local/share/ca-certificates;
+    if [[ "${URL}" =~ ${ishttp} ]];then
+        wget -r -nH -A ${FILTER} "${URL}";
+    elif [ -d "${URL}" ];then
+        cp -R ${URL}/${FILTER} /usr/local/share/ca-certificates/;
+    else
+        echo "Cert Updater: ${URL} does not exist, nothing to import";
+    fi;
+}
+    
+function cleanup()
+{
+    cd /usr/local/share/ca-certificates;
     rm -rf /usr/local/share/ca-certificates/*;
-else 
-    echo "CA Certificates: Nothing to import, CA_URL is not defined";
+}
+    
+#Run
+while getopts ":hp:c:f:aojk" option; do
+    case $option in
+      h)
+        show_help
+        exit;;
+      p)
+        URL=$OPTARG;;
+      c)
+        SUBJECT=$OPTARG;;
+      f)
+        FILTER=$OPTARG;;
+      a)
+        UPDATE="AUTO";;
+      o)
+        UPDATE="OS";;
+      j)
+        UPDATE="JVM";;
+      k)
+        update_keys
+        exit;;
+      \?)
+        echo "Error: Invalid option, -h for help"
+        exit 2;;
+    esac
+done
+
+if [ "${UPDATE}" == "AUTO" ];then
+    auto_update;
+elif [ "${UPDATE}" == "OS" ];then
+    update_os;
+elif [ "${UPDATE}" == "JVM" ];then
+    update_jvm;
+else
+    echo "Cert Updater: Invalid update type specified";
+    exit 2;
 fi;
+exit 0;
