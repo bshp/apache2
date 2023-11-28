@@ -1,6 +1,8 @@
 #!/bin/bash
+############
+set -eux;
     
-show_help()
+function show_help()
 {
    echo "Deploy/Update Application";
    echo
@@ -20,7 +22,7 @@ show_help()
    echo
 }
     
-get_signature()
+function get_signature()
 {
     option="$1";
     object="$2";
@@ -34,7 +36,7 @@ get_signature()
     fi;
 }
     
-set_metadata()
+function set_metadata()
 {
     option="$1";
     object="$2";
@@ -48,7 +50,7 @@ set_metadata()
     cd /opt;
 }
     
-deploy_app()
+function deploy_app()
 {
     if [ -d "${APP_LATEST}" ];then
         cp -R ${APP_LATEST}/* ${APP_BASE};
@@ -57,7 +59,7 @@ deploy_app()
     fi;
 }
     
-update_app()
+function update_app()
 {
     if [ "${SIG_LOCAL}" == "${SIG_UPDATE}" ];then
         echo "App Updater: Update is not needed, deployed: ${SIG_LOCAL}, latest: ${SIG_UPDATE}";

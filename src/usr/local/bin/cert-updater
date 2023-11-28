@@ -1,7 +1,8 @@
 #!/bin/bash
 ############
 set -eux;
-show_help()
+    
+function show_help()
 {
    echo "Update CA Trust Stores";
    echo
@@ -13,7 +14,7 @@ show_help()
    echo
    echo "Options:";
    echo "h    Print Help";
-   echo "a    Auto-update, update OS, and if JAVA_HOME deetected update cacerts, generates new key if default keys found";
+   echo "a    Auto-update, update OS, and if JAVA_HOME detected update cacerts, generates new key if default keys found";
    echo "o    Update OS Certificate Store";
    echo "j    Update Java Certificate Store";
    echo "k    Generate new server certificate and key";
