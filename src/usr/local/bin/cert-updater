@@ -125,7 +125,6 @@ while getopts ":hp:c:f:aojk" option; do
         UPDATE="JVM";;
       k)
         update_keys
-        exit;;
       \?)
         echo "Error: Invalid option, -h for help"
         exit 2;;
@@ -142,4 +141,3 @@ else
     echo "Cert Updater: Invalid update type specified";
     exit 2;
 fi;
-exit 0;

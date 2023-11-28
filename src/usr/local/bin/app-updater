@@ -63,7 +63,6 @@ function update_app()
 {
     if [ "${SIG_LOCAL}" == "${SIG_UPDATE}" ];then
         echo "App Updater: Update is not needed, deployed: ${SIG_LOCAL}, latest: ${SIG_UPDATE}";
-        exit 0;
     fi;
     if [ "${UPDATE_AUTO}" == "TRUE" ];then
         deploy_app;
