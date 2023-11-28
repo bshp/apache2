@@ -29,7 +29,7 @@ function get_signature()
     if [ -d "${object}" ];then
         set_metadata "${option}" "${object}";
         echo "$(sha1sum ${APP_CACHE}/${APP_NAME}.${option}.metadata | awk '{print $1}')";
-    elif [ -f "${option}" ];then
+    elif [ -f "${object}" ];then
         echo "$(sha1sum ${object} | awk '{print $1}')";
     else
         echo "0";
