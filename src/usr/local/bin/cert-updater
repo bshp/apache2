@@ -32,6 +32,7 @@ FILTER="*_CA.crt";
     
 function auto_update()
 {
+   get_certs;
    update_keys;
    update_os;
    update_jvm;
@@ -51,7 +52,6 @@ function update_keys()
     
 function update_jvm()
 {
-    get_certs;
     if [ "${JAVA_HOME}" != "none" ];then
         for CA_CRT in /usr/local/share/ca-certificates/*.crt; do
             CA_NAME=$(openssl x509 -noout -subject -nameopt multiline -in $CA_CRT | sed -n 's/ *commonName *= //p');
@@ -67,22 +67,15 @@ function update_jvm()
     else 
         echo "Cert Updater: JAVA_HOME is undefined in environment, nothing to import";
     fi;
-    if [ "${UPDATE}" != "AUTO" ];then
-        cleanup;
-    fi;
 }
     
 function update_os()
 {
-    get_certs;
     certs=$(ls /usr/local/share/ca-certificates/*.crt 2> /dev/null | wc -l);
     if [ "${certs}" -ne 0 ];then
         update-ca-certificates;
     else
         echo "Cert Updater: No certificates were found to import";
-    fi;
-    if [ "${UPDATE}" != "AUTO" ];then
-        cleanup;
     fi;
 }
     
@@ -134,9 +127,13 @@ done
 if [ "${UPDATE}" == "AUTO" ];then
     auto_update;
 elif [ "${UPDATE}" == "OS" ];then
+    get_certs;
     update_os;
+    cleanup;
 elif [ "${UPDATE}" == "JVM" ];then
+    get_certs;
     update_jvm;
+    cleanup;
 else
     echo "Cert Updater: Invalid update type specified";
     exit 2;
