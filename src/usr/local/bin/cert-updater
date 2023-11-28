@@ -124,7 +124,7 @@ while getopts ":hp:c:f:aojk" option; do
       j)
         UPDATE="JVM";;
       k)
-        update_keys
+        update_keys;;
       \?)
         echo "Error: Invalid option, -h for help"
         exit 2;;
