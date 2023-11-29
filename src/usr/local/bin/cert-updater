@@ -43,7 +43,7 @@ function update_keys()
 {
     if [ -f "/etc/ssl/default.keys" ];then
         rm /etc/ssl/default.keys;
-        openssl dhparam -out /etc/ssl/dhparams.pem 3072;
+        openssl dhparam -out /etc/ssl/dhparams.pem ${DH_PARAM_SIZE};
         openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=${SUBJECT} -sha256 -days 3650;
         PEM_SHA1=$(openssl x509 -noout -fingerprint -sha1 -in /etc/ssl/server.pem | cut -f2 -d"=" | sed "s/://g" | awk '{print tolower($0)}');
         echo "Cert Updater: Keygen finished, Thumbprint: $PEM_SHA1";

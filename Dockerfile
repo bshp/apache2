@@ -9,6 +9,7 @@ ENV OS_CODENAME=jammy
 ENV OS_VERSION=2204
 ENV OS_TIMEZONE=${TZ}
 ENV APACHE_LOG=/var/log/apache2
+ENV DH_PARAM_SIZE=3072
 ENV VADC_IP_ADDRESS="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
 ENV VADC_IP_HEADER="X-Forwarded-For"
     
@@ -21,7 +22,7 @@ RUN set -eux; \
     service apache2 stop && a2enmod headers remoteip rewrite ssl unique_id; \
     a2dismod info status; \
     openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=localhost -sha256 -days 3650; \
-    openssl dhparam -out /etc/ssl/dhparams.pem 3072; \
+    openssl dhparam -out /etc/ssl/dhparams.pem ${DH_PARAM_SIZE}; \
     touch /etc/ssl/default.keys; \
     rm /var/log/apache2/*.log; \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
