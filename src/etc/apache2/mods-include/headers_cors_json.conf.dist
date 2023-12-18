@@ -1,0 +1,8 @@
+<IfModule mod_headers.c>
+        #HEADERS
+        <FilesMatch "\.(json)$">
+            Header always set Access-Control-Allow-Headers '*'
+            Header always set Access-Control-Allow-Origin '*'
+            Header always set Content-Type 'application/json'
+        </FilesMatch>
+</IfModule>

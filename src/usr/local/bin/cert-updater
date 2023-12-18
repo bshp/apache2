@@ -1,42 +1,18 @@
 #!/bin/bash
 ############
-set -eux;
     
-function show_help()
-{
-   echo "Update CA Trust Stores";
-   echo
-   echo "Syntax: cert-updater [-h|a|o|j|k|f] [-p|c]";
-   echo
-   echo "Default:";
-   echo "    Auto-update all stores and generate new keypair if needed";
-   echo "    Filter: *_CA.crt";
-   echo
-   echo "Options:";
-   echo "h    Print Help";
-   echo "a    Auto-update, update OS, and if JAVA_HOME detected update cacerts, generates new key if default keys found";
-   echo "o    Update OS Certificate Store";
-   echo "j    Update Java Certificate Store";
-   echo "k    Generate new server certificate and key";
-   echo "p    Path or URL to where the CA Certs are to add, you can use -f option to filter";
-   echo "f    Filter for CA cert import, default: *_CA.crt";
-   echo "c    Subject name for new localhost certificate and key";
-   echo
-}
-    
-URL="";
-SUBJECT="localhost";
-JAVA_HOME=${JAVA_HOME:-none};
-UPDATE="AUTO";
-FILTER="*_CA.crt";
+JAVA_HOME=${JAVA_HOME:-};
     
 function auto_update()
 {
-   get_certs;
-   update_keys;
-   update_os;
-   update_jvm;
-   cleanup;
+    if [[ ${CERT_PATH} != "" ]];then
+        get_certs;
+        update_os;
+        update_jvm;
+        cleanup;
+    else 
+        echo "Cert Updater: CA Path was not defined, skipping OS and JVM. You can set the path using CERT_PATH";
+    fi;
 }
     
 function update_keys()
@@ -44,7 +20,7 @@ function update_keys()
     if [ -f "/etc/ssl/default.keys" ];then
         rm /etc/ssl/default.keys;
         openssl dhparam -out /etc/ssl/dhparams.pem ${DH_PARAM_SIZE};
-        openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=${SUBJECT} -sha256 -days 3650;
+        openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=${CERT_SUBJECT} -sha256 -days 3650;
         PEM_SHA1=$(openssl x509 -noout -fingerprint -sha1 -in /etc/ssl/server.pem | cut -f2 -d"=" | sed "s/://g" | awk '{print tolower($0)}');
         echo "Cert Updater: Keygen finished, Thumbprint: $PEM_SHA1";
     fi;
@@ -52,7 +28,7 @@ function update_keys()
     
 function update_jvm()
 {
-    if [ "${JAVA_HOME}" != "none" ];then
+    if [[ "${JAVA_HOME}" != "" ]];then
         for CA_CRT in /usr/local/share/ca-certificates/*.crt; do
             CA_NAME=$(openssl x509 -noout -subject -nameopt multiline -in $CA_CRT | sed -n 's/ *commonName *= //p');
             CA_EXISTS=$(${JAVA_HOME}/bin/keytool -list -cacerts -storepass changeit -alias "$CA_NAME" | echo $?);
@@ -83,12 +59,12 @@ function get_certs()
 {
     ishttp='^(http|https)';
     cd /usr/local/share/ca-certificates;
-    if [[ "${URL}" =~ ${ishttp} ]];then
-        wget -r -nH -A ${FILTER} "${URL}";
-    elif [ -d "${URL}" ];then
-        cp -R ${URL}/${FILTER} /usr/local/share/ca-certificates/;
+    if [[ "${CERT_PATH}" =~ ${ishttp} ]];then
+        wget -q -r -nH -A ${CERT_FILTER} "${CERT_PATH}";
+    elif [ -d "${CERT_PATH}" ];then
+        cp -R ${CERT_PATH}/${CERT_FILTER} /usr/local/share/ca-certificates/;
     else
-        echo "Cert Updater: ${URL} does not exist, nothing to import";
+        echo "Cert Updater: ${CERT_PATH} does not exist, nothing to import";
     fi;
 }
     
@@ -99,42 +75,25 @@ function cleanup()
 }
     
 #Run
-while getopts ":hp:c:f:aojk" option; do
-    case $option in
-      h)
-        show_help
-        exit;;
-      p)
-        URL=$OPTARG;;
-      c)
-        SUBJECT=$OPTARG;;
-      f)
-        FILTER=$OPTARG;;
-      a)
-        UPDATE="AUTO";;
-      o)
-        UPDATE="OS";;
-      j)
-        UPDATE="JVM";;
-      k)
-        update_keys;;
-      \?)
-        echo "Error: Invalid option, -h for help"
-        exit 2;;
-    esac
-done
-
-if [ "${UPDATE}" == "AUTO" ];then
-    auto_update;
-elif [ "${UPDATE}" == "OS" ];then
-    get_certs;
-    update_os;
-    cleanup;
-elif [ "${UPDATE}" == "JVM" ];then
-    get_certs;
-    update_jvm;
-    cleanup;
-else
-    echo "Cert Updater: Invalid update type specified";
-    exit 2;
+if [[ ${CERT_UPDATE_KEYS} == 1 ]];then
+    echo "Cert Updater: CERT_UPDATE_KEYS is enabled, generating new pair";
+    update_keys;
 fi;
+    
+if [[ ${CERT_AUTO_UPDATE} == 1 ]];then
+    echo "Cert Updater: CERT_AUTO_UPDATE is enabled";
+    auto_update;
+else
+    if [[ ${CERT_PATH} != "" ]];then
+        get_certs;
+        if [[ "${CERT_UPDATE_OS}" == 1 ]];then
+            update_os;
+        fi;
+        if [[ "${CERT_UPDATE_JVM}" == 1 ]];then
+            update_jvm;
+        fi;
+        cleanup;
+    fi;
+fi;
+    
+echo "Cert Updater: Finished Updating Certs";

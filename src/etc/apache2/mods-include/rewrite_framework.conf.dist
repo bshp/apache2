@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
+    #Exclude Acme
+    RewriteRule ^(\/\.well\-known\/acme\-challenge.*) - [L]
+    #Exclude User Defined
+    #REWRITE_EXCLUDE
+    #Forward/Set the Authorization Header for Basic/Bearer
+    RewriteCond %{HTTP:Authorization} ^(.*)
+    RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+    RewriteCond %{REMOTE_USER} ^(.*)
+    RewriteRule .* - [e=REMOTE_USER:%1]
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ /#FRAMEWORK/$1 [L,QSA]
+</IfModule>
