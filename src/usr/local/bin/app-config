@@ -1,5 +1,5 @@
 #!/bin/bash
-    
+
 function addDefault()
 {
     cp ${APACHE_MODS}/rewrite_default.conf.dist ${APACHE_MODS}/rewrite.conf;
