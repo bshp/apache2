@@ -5,8 +5,8 @@ APP_CONFIG=0;
 APP_UPDATE=0;
 APP_START=0;
 APP_CMD=/usr/local/bin;
-HTTPD=/usr/sbin/apachectl;
-TOMCAT=${CATALINA_HOME}/bin/catalina.sh;
+APACHE_BIN=/usr/sbin/apachectl;
+TOMCAT_BIN=${CATALINA_HOME}/bin/catalina.sh;
     
 function show_help()
 {
@@ -57,12 +57,12 @@ if [[ $APP_UPDATE == 1 ]];then
 fi;
 if [[ $APP_START == 1 ]];then
     if [[ "${APP_TYPE}" == "apache" ]];then
-        $HTTPD -k start -D FOREGROUND;
+        $APACHE_BIN -k start -D FOREGROUND;
     fi;
     if [[ "${APP_TYPE}" == "tomcat" ]];then
-        $HTTPD -k start;
-        su ${APP_RUNAS} -c $TOMCAT run;
+        $APACHE_BIN -k start;
+        su ${APP_RUNAS} -c $TOMCAT_BIN run;
     fi;
 else
-    echo "Not starting container, use -r to execute";
+    echo "Not starting container, use --run to execute";
 fi;
