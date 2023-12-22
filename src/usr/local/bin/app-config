@@ -51,6 +51,10 @@ export APP_RUNAS="$APP_RUNAS";
 if [[ ${REWRITE_SKIP} == 1 ]];then
     echo "App Config: Using default site without rewrite, REWRITE_SKIP defined";
 else
+    #Enable Rewrite Engine
+    sed -i "s/#REWRITE/RewriteEngine On/g" ${APACHE_SITES}/000-default.conf;
+    sed -i "s/#REWRITE/RewriteEngine On/g" ${APACHE_SITES}/default-ssl.conf;
+    
     if [[ ${REWRITE_DEFAULT} == 1 ]];then
         echo "App Config: REWRITE_DEFAULT is defined, attemting to configure rewrite all requests to SSL enabled site";
         addDefault;

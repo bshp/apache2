@@ -41,9 +41,7 @@ for cmds in "$@"; do
 done;
     
 #Reload Environment
-while read -r env; do 
-    export "$env";
-done;
+#set -a; source /etc/environment; set +a
     
 #Run
 if [[ $APP_CERTS == 1 ]];then
