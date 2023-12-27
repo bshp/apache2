@@ -17,13 +17,13 @@ function auto_update()
     
 function update_keys()
 {
+    openssl dhparam -out /etc/ssl/dhparams.pem ${DH_PARAM_SIZE};
+    openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=${CERT_SUBJECT} -sha256 -days 3650;
+    PEM_SHA1=$(openssl x509 -noout -fingerprint -sha1 -in /etc/ssl/server.pem | cut -f2 -d"=" | sed "s/://g" | awk '{print tolower($0)}');
     if [ -f "/etc/ssl/default.keys" ];then
         rm /etc/ssl/default.keys;
-        openssl dhparam -out /etc/ssl/dhparams.pem ${DH_PARAM_SIZE};
-        openssl req -newkey rsa:2048 -x509 -nodes -keyout /etc/ssl/server.key -new -out /etc/ssl/server.pem -subj /CN=${CERT_SUBJECT} -sha256 -days 3650;
-        PEM_SHA1=$(openssl x509 -noout -fingerprint -sha1 -in /etc/ssl/server.pem | cut -f2 -d"=" | sed "s/://g" | awk '{print tolower($0)}');
-        echo "Cert Updater: Keygen finished, Thumbprint: $PEM_SHA1";
     fi;
+    echo "Cert Updater: Keygen finished, Thumbprint: $PEM_SHA1";
 }
     
 function update_jvm()
@@ -75,11 +75,10 @@ function cleanup()
 }
     
 #Run
-if [[ ${CERT_UPDATE_KEYS} == 1 ]];then
-    echo "Cert Updater: CERT_UPDATE_KEYS is enabled, generating new pair";
+if [ -f "/etc/ssl/default.keys" ] || [[ ${CERT_UPDATE_KEYS} == 1 ]];then
+    echo "Cert Updater: Generating new key pair";
     update_keys;
 fi;
-    
 if [[ ${CERT_AUTO_UPDATE} == 1 ]];then
     echo "Cert Updater: CERT_AUTO_UPDATE is enabled";
     auto_update;
@@ -93,6 +92,8 @@ else
             update_jvm;
         fi;
         cleanup;
+    else
+        echo "Cert Updater: CERT_PATH is not defined, nothing to do";
     fi;
 fi;
     
