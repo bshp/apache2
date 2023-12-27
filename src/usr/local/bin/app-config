@@ -13,7 +13,6 @@ function addIndex()
     
 function addExclude()
 {
-    echo "App Config: REWRITE_EXCLUDE is defined, setting rewrite to ignore the matched pattern ${REWRITE_EXCLUDE}";
     sed -i "s@#REWRITE_EXCLUDE@$(printf %q "        RewriteRule ${REWRITE_EXCLUDE} - [L]")@g" ${APACHE_MODS}/rewrite.conf;
 }
     
