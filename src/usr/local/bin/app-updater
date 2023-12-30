@@ -1,6 +1,5 @@
 #!/bin/bash
-############
-    
+
 function get_signature()
 {
     option="$1";
@@ -50,65 +49,66 @@ function update_app()
     
 #Run
     
-if [[ "${APP_TYPE}" == "" ]];then
-    echo "App Updater: Required APP_TYPE is not set, set as apache or tomcat";
-    exit 22;
-elif [[ "${APP_NAME}" == "" ]];then
-    echo "App Updater: Required APP_NAME is not set, use -n to set the name, -h for help";
-    exit 22;
-elif [[ "${APP_UPDATE_PATH}" == "" ]];then
-    echo "App Updater: Required APP_UPDATE_PATH is not set";
-    exit 22;
+if [[ "${APP_UPDATE_PATH}" == "" ]];then
+    echo "App Updater: Required APP_UPDATE_PATH is not set, nothing to do";
 else
-    echo "App Updater: Checking if deployment or update needed";
-fi;
-    
-echo "App Updater: APP_TYPE is ${APP_TYPE}";
-    
-if [[ "${APP_TYPE}" == "apache" ]];then
-    APP_HOME="/var/www/html";
-    APP_DEPLOY="/var/www/html";
-    APP_LATEST="${APP_UPDATE_PATH}/${APP_NAME}";
-fi;
-    
-if [[ "${APP_TYPE}" == "tomcat" ]];then
-    APP_HOME="${CATALINA_HOME}/webapps/";
-    APP_DEPLOY="${APP_HOME}${APP_NAME}.war";
-    APP_LATEST="${APP_UPDATE_PATH}/${APP_NAME}.war";
-    if [[ "${APP_DATA}" == "/var/www/html" ]];then
-        APP_DATA="/etc/${APP_NAME}";
-        echo "App Updater: APP_DATA is set to /var/www, changing to ${APP_DATA}";
+    if [[ "${APP_TYPE}" == "" ]];then
+        echo "App Updater: Required APP_TYPE is not set, set as apache or tomcat";
+        exit 22;
+    elif [[ "${APP_NAME}" == "" ]];then
+        echo "App Updater: Required APP_NAME is not set, use -n to set the name, -h for help";
+        exit 22;
+    else
+        echo "App Updater: Checking if deployment or update needed";
     fi;
-    if [[ "${APP_OWNER}" == "www-data" ]];then
-        APP_OWNER="root";
-        echo "App Updater: APP_OWNER is set to www-data, changing to ${APP_OWNER}";
-    fi;
-    if [[ "${APP_GROUP}" == "www-data" ]];then
-        APP_GROUP="tomcat";
-        echo "App Updater: APP_GROUP is set to www-data, changing to ${APP_GROUP}";
-    fi;
-fi;
     
-if [[ ! -d ${APP_DATA} ]]; then
-    echo "App Updater: Data directory for application does not exist, creating ${APP_DATA}";
-    install -d -m 0770 -o ${APP_OWNER} -g ${APP_GROUP} ${APP_DATA};
-fi
+    echo "App Updater: APP_TYPE is ${APP_TYPE}";
     
-SIG_LOCAL=$(get_signature "local" "${APP_DEPLOY}");
-SIG_UPDATE=$(get_signature "update" "${APP_LATEST}");
-
-if [[ "${SIG_LOCAL}" == "0" ]] && [[ "${SIG_UPDATE}" == "0" ]];then
-    echo "App Updater: Application has not been deployed and was not found in ${APP_UPDATE_PATH}";
-    exit 2;
-elif [[ "${SIG_LOCAL}" == "0" ]] && [[ "${SIG_UPDATE}" != "0" ]];then
-    echo "App Updater: Application has not been deployed, deploying from ${APP_UPDATE_PATH}";
-    deploy_app;
-elif [[ "${SIG_LOCAL}" != "0" ]] && [[ "${SIG_UPDATE}" == "0" ]];then
-    echo "App Updater: Application is deployed but update is empty, failure enabled: ${APP_UPDATE_FAIL}";
-    if [[ "${APP_UPDATE_FAIL}" == 1 ]];then
+    if [[ "${APP_TYPE}" == "apache" ]];then
+        APP_HOME="/var/www/html";
+        APP_DEPLOY="/var/www/html";
+        APP_LATEST="${APP_UPDATE_PATH}/${APP_NAME}";
+    fi;
+    
+    if [[ "${APP_TYPE}" == "tomcat" ]];then
+        APP_HOME="${CATALINA_HOME}/webapps/";
+        APP_DEPLOY="${APP_HOME}${APP_NAME}.war";
+        APP_LATEST="${APP_UPDATE_PATH}/${APP_NAME}.war";
+        if [[ "${APP_DATA}" == "/var/www/html" ]];then
+            APP_DATA="/etc/${APP_NAME}";
+            echo "App Updater: APP_DATA is set to /var/www, changing to ${APP_DATA}";
+        fi;
+        if [[ "${APP_OWNER}" == "www-data" ]];then
+            APP_OWNER="root";
+            echo "App Updater: APP_OWNER is set to www-data, changing to ${APP_OWNER}";
+        fi;
+        if [[ "${APP_GROUP}" == "www-data" ]];then
+            APP_GROUP="tomcat";
+            echo "App Updater: APP_GROUP is set to www-data, changing to ${APP_GROUP}";
+        fi;
+    fi;
+    
+    if [[ ! -d ${APP_DATA} ]]; then
+        echo "App Updater: Data directory for application does not exist, creating ${APP_DATA}";
+        install -d -m 0770 -o ${APP_OWNER} -g ${APP_GROUP} ${APP_DATA};
+    fi
+    
+    SIG_LOCAL=$(get_signature "local" "${APP_DEPLOY}");
+    SIG_UPDATE=$(get_signature "update" "${APP_LATEST}");
+    
+    if [[ "${SIG_LOCAL}" == "0" ]] && [[ "${SIG_UPDATE}" == "0" ]];then
+        echo "App Updater: Application has not been deployed and was not found in ${APP_UPDATE_PATH}";
         exit 2;
+    elif [[ "${SIG_LOCAL}" == "0" ]] && [[ "${SIG_UPDATE}" != "0" ]];then
+        echo "App Updater: Application has not been deployed, deploying from ${APP_UPDATE_PATH}";
+        deploy_app;
+    elif [[ "${SIG_LOCAL}" != "0" ]] && [[ "${SIG_UPDATE}" == "0" ]];then
+        echo "App Updater: Application is deployed but update is empty, failure enabled: ${APP_UPDATE_FAIL}";
+        if [[ "${APP_UPDATE_FAIL}" == 1 ]];then
+            exit 2;
+        fi;
+    else
+        echo "App Updater: Auto-update is enabled: ${APP_UPDATE_AUTO}, deployed: ${SIG_LOCAL}, latest: ${SIG_UPDATE}";
+        update_app;
     fi;
-else
-    echo "App Updater: Auto-update is enabled: ${APP_UPDATE_AUTO}, deployed: ${SIG_LOCAL}, latest: ${SIG_UPDATE}";
-    update_app;
 fi;

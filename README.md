@@ -1,8 +1,41 @@
 #### Apache Web Server  
-Designed to be run as a base image for a web application.    
+Designed to be run directly without having to create different dockerfiles for web applications that do not need some type of engine.
     
-Base OS: Ubuntu Server LTS - Latest    
-Apache2: Latest version for Ubuntu LTS, updated weekly    
+If you need either PHP or Tomcat:
+    
+PHP: [Walrus](https://github.com/bshp/walrus)  
+Tomcat: [Firefly](https://github.com/bshp/firefly)  
+    
+#### Base OS:    
+Ubuntu Server LTS - Latest
+    
+#### Packages:    
+Updated weekly from the official upstream Ubuntu LTS image
+````
+apache2 
+ca-certificates 
+curl 
+gnupg 
+jq 
+libapache2-mod-jk 
+openssl 
+tzdata 
+wget
+````
+#### Enabled Mods:
+````
+headers 
+remoteip 
+rewrite 
+ssl 
+unique_id
+````
+#### Disabled Mods:
+````
+info 
+jk 
+status
+````
     
 #### Environment Variables:    
     
@@ -25,20 +58,18 @@ VADC_IP_ADDRESS  = address of load balancer, space seperated, e.g 192.168.100.10
 VADC_IP_HEADER   = client ip header name, e.g X-Client-IP , default: X-Forwarded-For
 ````
 Note:    
-Some need to be set for certain functions, app-config, app-updater, cert-updater, see [Base Scripts](https://github.com/bshp/apache2/tree/master/src/usr/local/bin) for more info
-    
-#### Entrypoint: Add apache and optionally other commands
+Some need to be set for certain functions when used direct with app-run, see [Base Scripts](https://github.com/bshp/apache2/tree/master/src/usr/local/bin) for more info    
+#### Direct:  
 ````
-/usr/local/bin/app-cmd --certs --config;
+docker run --entrypoint /usr/local/bin/app-run -e REWRITE_SKIP=0 -e REWRITE_DEFAULT=1 -d bshp/apache2:latest
+````
+#### Custom:  
+Add at end of your entrypoint script either of:  
+````
+/usr/local/bin/app-run;
+````
+````
 apachectl -k start -D FOREGROUND;
-````
-#### Standalone: Use app-cmd    
-    --certs = cert-updater
-    --config = app-config
-    --update = app-updater
-    --run    = Run Application, starts apache2 or apache2+tomcat if it detected
-````
-docker run --entrypoint /usr/local/bin/app-cmd -e REWRITE_SKIP=0 -e REWRITE_DEFAULT=1 -d bshp/apache2:latest --config --run
 ````
     
 #### Build:  

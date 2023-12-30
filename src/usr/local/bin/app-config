@@ -26,12 +26,41 @@ function addCors()
 {
     cp ${APACHE_MODS}/headers_cors_json.conf.dist ${APACHE_MODS}/headers.conf;
 }
+
+function resetConfig()
+{
+    SITE_TEMPLATE=/etc/apache2/sites-available;
+    if [[ -f ${APACHE_MODS}/rewrite.conf ]];then
+        mv -f ${APACHE_MODS}/rewrite.conf ./rewrite.conf.`ls rewrite.conf* | wc -l`;
+    fi;
+    if [[ -f ${APACHE_MODS}/headers.conf ]];then
+        mv -f ${APACHE_MODS}/headers.conf ./headers.conf.`ls headers.conf* | wc -l`;
+    fi;
+    if [[ -f ${APACHE_MODS}/jk.conf ]];then
+        mv -f ${APACHE_MODS}/jk.conf ./jk.conf.`ls jk.conf* | wc -l`;
+    fi;
+    if [[ -f ${APACHE_MODS}/jk.load ]];then
+        mv -f ${APACHE_MODS}/jk.load ./jk.load.`ls jk.load* | wc -l`;
+    fi;
+    if [[ -f ${APACHE_SITES}/000-default.conf ]];then
+        mv -f ${APACHE_SITES}/000-default.conf ./000-default.conf.`ls 000-default.conf* | wc -l`;
+        cp -f ${SITE_TEMPLATE}/000-default.conf.dist ${APACHE_SITES}/000-default.conf;
+    fi;
+    if [[ -f ${APACHE_SITES}/default-ssl.conf ]];then
+        mv -f ${APACHE_SITES}/default-ssl.conf ./default-ssl.conf.`ls default-ssl.conf* | wc -l`;
+        cp -f ${SITE_TEMPLATE}/default-ssl.conf.dist ${APACHE_SITES}/default-ssl.conf;
+    fi;
+}
     
 #Run
     
 echo "App Config: APP_TYPE is ${APP_TYPE}";
     
 APP_RUNAS="www-data";
+    
+if [[ -f /etc/app-init.conf ]];then
+    resetConfig;
+fi;
     
 if [[ "${APP_TYPE}" == "tomcat" ]];then
     APP_RUNAS="tomcat";
@@ -90,9 +119,8 @@ if [[ "${APP_TYPE}" == "apache" ]];then
     if [ -z "$CFG_RESULT" ];then
         echo "App Config: Test FAILED, reverting changes";
         echo "App Config: Result: $CFG_TEST";
-        if [[ -f ${APACHE_MODS}/rewrite.conf ]];then
-            mv ${APACHE_MODS}/rewrite.conf ./rewrite.conf.failed;
-        fi;
+        resetConfig;
+        exit 1;
     else
         echo "App Config: Apache Config Test PASSED, using updated configuration";
         echo "App Config: Apache2 remoteip configured with [address: ${VADC_IP_ADDRESS}, header: ${VADC_IP_HEADER}]";
@@ -104,14 +132,16 @@ if [[ "${APP_TYPE}" == "tomcat" ]];then
     CFG_PASS="INFO: Server initialization in";
     CFG_RESULT=$(echo "$CFG_TEST" | grep "$CFG_PASS");
     if [[ -z $CFG_RESULT ]];then
-        echo "App Config: Tomcat Test FAILED, unrecoverable";
+        echo "App Config: Tomcat Test FAILED, reverting changes";
         echo "App Config: Result: $CFG_TEST";
+        resetConfig;
         exit 1;
     fi;
     echo "App Config: Tomcat RemoteIpValve configured with [internalProxies: ${APP_PROXIES}, remoteIpHeader: ${VADC_IP_HEADER}]";
     echo "App Config: Configured JAVA_OPTS with ${APP_OPTS}";
 fi;
     
+echo "#Container Initialized" > /etc/app-init.conf;
 echo "App Config: Initialization complete"
 echo "App Config: You can use APP_RUNAS variable in your entrypoint to run the app as [ ${APP_RUNAS} ] OR risk it for the biscuit and run as root"; 
     

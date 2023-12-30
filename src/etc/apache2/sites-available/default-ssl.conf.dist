@@ -1,0 +1,29 @@
+<IfModule mod_ssl.c>
+    <VirtualHost _default_:443>
+        
+        ServerAdmin webmaster@example.com
+        
+        #REWRITE
+        
+        DocumentRoot /var/www/html
+        
+        SSLEngine on
+        SSLCertificateFile       /etc/ssl/server.pem
+        SSLCertificateKeyFile    /etc/ssl/server.key
+        #SSLCertificateChainFile /etc/ssl/ca_chain.pem
+        
+        <FilesMatch "\.(cgi|shtml|phtml|php)$">
+            SSLOptions +StdEnvVars
+        </FilesMatch>
+        
+        #HEADERS
+        
+        <Directory /usr/lib/cgi-bin>
+            SSLOptions +StdEnvVars
+        </Directory>
+        
+    </VirtualHost>
+    
+</IfModule>
+    
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
