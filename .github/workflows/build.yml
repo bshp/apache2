@@ -18,8 +18,17 @@ jobs:
         DOCKER_TOKEN: ${{secrets.DOCKER_TOKEN}}
       run: |
         docker login -u $DOCKER_USER -p $DOCKER_TOKEN
-    - name: Build
-      run: docker build . --pull --tag bshp/apache2:latest --progress=plain
-    - name: Push
+    - name: Build 22.04
       run: |
+        docker build . --build-arg VERSION=22.04 --pull --tag bshp/apache2:latest --progress=plain --no-cache
+    - name: Push 22.04
+      run: |
+        docker tag bshp/apache2:latest bshp/apache2:22.04
         docker push bshp/apache2:latest
+        docker push bshp/apache2:22.04
+    - name: Build 24.04
+      run: |
+        docker build . --build-arg VERSION=24.04 --pull --tag bshp/apache2:24.04 --progress=plain --no-cache
+    - name: Push 24.04
+      run: |
+        docker push bshp/apache2:24.04

@@ -1,12 +1,15 @@
 # envvars - default environment variables for apache2ctl
     
-unset HOME
+unset HOME;
     
-if [ "${APACHE_CONFDIR##/etc/apache2-}" != "${APACHE_CONFDIR}" ] ; then
-    SUFFIX="-${APACHE_CONFDIR##/etc/apache2-}"
+if [ "${APACHE_CONFDIR##/etc/apache2-}" != "${APACHE_CONFDIR}" ];then
+    SUFFIX="-${APACHE_CONFDIR##/etc/apache2-}";
 else
     SUFFIX=
-fi
+fi;
+    
+## Default: 8192
+#APACHE_ULIMIT_MAX_FILES='ulimit -n 65536'
     
 export LANG=C
 export LANG
