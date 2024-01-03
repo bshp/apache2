@@ -7,7 +7,7 @@ PHP: [Walrus](https://github.com/bshp/walrus)
 Tomcat: [Firefly](https://github.com/bshp/firefly)  
     
 #### Base OS:    
-Ubuntu Server LTS - Latest
+Ubuntu Server LTS
     
 #### Packages:    
 Updated weekly from the official upstream Ubuntu LTS image
@@ -20,6 +20,7 @@ jq
 libapache2-mod-jk 
 openssl 
 tzdata 
+unzip 
 wget
 ````
 #### Enabled Mods:
@@ -73,7 +74,8 @@ apachectl -k start -D FOREGROUND;
 ````
     
 #### Build:  
+VERSION = Ubuntu version to build, e.g 22.04, 24.04
 ````
-docker build . --tag YOUR_TAG
+docker build . --build-arg VERSION=22.04 --tag YOUR_TAG
 ````
     
