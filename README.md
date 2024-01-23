@@ -62,7 +62,7 @@ VADC_IP_ADDRESS  = address of load balancer, space seperated, e.g 192.168.100.10
 VADC_IP_HEADER   = client ip header name, e.g X-Client-IP , default: X-Forwarded-For
 ````
 Note:    
-Some need to be set for certain functions when used direct with ociectl, see [Base Scripts](https://github.com/bshp/apache2/tree/master/src/usr/local/bin) for more info    
+Some need to be set for certain functions when used direct with ociectl, see [Ocie Scripts](https://github.com/bshp/ocie/tree/main/src) for more info    
 #### Direct:  
 ````
 docker run --entrypoint /usr/local/bin/ociectl -d bshp/apache2:latest --run
