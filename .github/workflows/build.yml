@@ -6,8 +6,6 @@ on:
     paths-ignore:
       - '.gitignore'
       - 'README.md'
-  schedule:
-    - cron:  '15 0 * * 0'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,3 +31,11 @@ jobs:
     - name: Push 24.04
       run: |
         docker push bshp/apache2:24.04
+    - name: Build Firefly
+      run: |
+        curl -L -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: ${{secrets.WF_TOKEN}}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/bshp/firefly/actions/workflows/build.yml/dispatches \
+            -d '{"ref":"master"}'
