@@ -44,11 +44,14 @@ Optional:
 ````
 APP_CACHE        = Sets your application cache directory, default: /var/cache
 APP_DATA         = Set directory where apache can write to outside the web root, default: /var/www/data
+CA_PATH          = URL or PATH to where CA Certificates can be found, prefixed with file: or url: , e.g url:https://www.example.com/ or file:/opt/certs
+CA_FILTER        = the filter for certificate import, e.g "*_CA.crt"
+CA_AUTO_UPDATE   = 1 (Import CERT_PATH certs into the OS and Java stores)
+CA_UPDATE_JVM    = 0 (No affect if CA_AUTO_UPDATE is set to 1)
+CA_UPDATE_KEYS   = 0 (No affect if CA_AUTO_UPDATE is set to 1)
+CA_UPDATE_OS     = 1 (No affect if CA_AUTO_UPDATE is set to 1)
 CERT_SUBJECT     = the subject for the server ssl keys, e.g "localhost"
-CERT_FILTER      = the filter for certificate import, e.g "*_CA.crt"
 CERT_UPDATE_KEYS = 0 to not update, 1 to force update
-CERT_PATH        = URL or PATH to where CA Certificates can be found
-CERT_AUTO_UPDATE = 1 (Import CERT_PATH certs into the OS and Java stores)
 REWRITE_CORS     = 0 do not add cors, 1 to add cors, uses mod_headers
 REWRITE_DEFAULT  = 0 to not use, 1 to use, e.g rewrite all to ssl
 REWRITE_SKIP     = 0 to enable rewrite module, 1 to disable
@@ -59,15 +62,15 @@ VADC_IP_ADDRESS  = address of load balancer, space seperated, e.g 192.168.100.10
 VADC_IP_HEADER   = client ip header name, e.g X-Client-IP , default: X-Forwarded-For
 ````
 Note:    
-Some need to be set for certain functions when used direct with app-run, see [Base Scripts](https://github.com/bshp/apache2/tree/master/src/usr/local/bin) for more info    
+Some need to be set for certain functions when used direct with ociectl, see [Base Scripts](https://github.com/bshp/apache2/tree/master/src/usr/local/bin) for more info    
 #### Direct:  
 ````
-docker run --entrypoint /usr/local/bin/app-run -e REWRITE_SKIP=0 -e REWRITE_DEFAULT=1 -d bshp/apache2:latest
+docker run --entrypoint /usr/local/bin/ociectl -d bshp/apache2:latest --run
 ````
 #### Custom:  
 Add at end of your entrypoint script either of:  
 ````
-/usr/local/bin/app-run;
+/usr/local/bin/ociectl --run;
 ````
 ````
 apachectl -k start -D FOREGROUND;
@@ -76,6 +79,6 @@ apachectl -k start -D FOREGROUND;
 #### Build:  
 VERSION = Ubuntu version to build, e.g 22.04, 24.04
 ````
-docker build . --build-arg VERSION=22.04 --tag YOUR_TAG
+docker build . --pull --build-arg VERSION=22.04 --tag YOUR_TAG
 ````
     
