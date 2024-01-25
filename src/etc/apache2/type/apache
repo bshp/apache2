@@ -1,0 +1,44 @@
+#!/bin/bash
+    
+function app_shutdown()
+{
+    /usr/sbin/apachectl -k stop;
+}
+    
+function app_reload()
+{
+
+    /usr/sbin/apachectl -k graceful;
+}
+    
+function app_start()
+{
+   /usr/sbin/apachectl -k start -D FOREGROUND;
+}
+    
+function app_certs()
+{
+    ${OCIE_HOME}/scripts/cacerts;
+}
+    
+function app_config()
+{
+    ${OCIE_HOME}/scripts/config;
+}
+    
+function app_update()
+{
+    ${OCIE_HOME}/scripts/update;
+}
+    
+function app_test()
+{
+    CFG_TEST=$(apachectl configtest 2>&1);
+    CFG_PASS="Syntax OK";
+    CFG_RESULT=$(echo "$CFG_TEST" | grep "$CFG_PASS");
+    if [[ -z "$CFG_RESULT" ]];then
+        echo "$CFG_RESULT";
+    else 
+        echo "true";
+    fi;
+}
