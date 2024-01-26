@@ -44,29 +44,33 @@ ENV VADC_IP_ADDRESS="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
 ENV VADC_IP_HEADER="X-Forwarded-For"
     
 # Initial Setup for Apache2
-RUN set -eu; \
+RUN <<"EOD" bash
+    set -eu;
     # Add packages
-    ocie --dhparams "-size ${DH_PARAM_SIZE}" --pkg "-add apache2,libapache2-mod-jk" --keys "-subject ${CERT_SUBJECT}"; \
+    ocie --dhparams "-size ${DH_PARAM_SIZE}" --pkg "-add apache2,libapache2-mod-jk" --keys "-subject ${CERT_SUBJECT}";
     # Apache Cleanup
-    a2enmod -q headers remoteip rewrite ssl unique_id >/dev/null; \
-    a2dismod -q info jk status >/dev/null; \
+    a2enmod -q headers remoteip rewrite ssl unique_id >/dev/null;
+    a2dismod -q info jk status >/dev/null;
     # Cleanup image, remove unused directories and files, etc..
     ocie --clean "-base -path /etc/apache2/mods-available/ -pattern 'jk.*' -dirs /etc/libapache2-mod-jk";
+EOD
     
 # Configs and Scripts
 COPY --chown=root:root --chmod=0755 ./src/etc/apache2/ ./etc/apache2/
     
 # Ensure Apache2 Starts
-RUN set -eu; \
-    apache2Test=$(apachectl configtest 2>&1); \
-    apache2Starts=$(echo "$apache2Test" | grep 'Syntax OK'); \
-    if [ -z "$apache2Starts" ];then \
-        echo "Validation for Apache2: FAILED"; \
-        echo "$apache2Test"; \
-        exit 1; \
-    else \
-        echo "Validation for Apache2: SUCCESS"; \
+RUN <<"EOD" bash
+    set -eu;
+    echo "Validating Apache2 configuration";
+    APACHE_TEST=$(ociectl --test);
+    if [[ ! -z "$APACHE_TEST" ]];then
+        echo "Validation: FAILED";
+        echo "$APACHE_TEST";
+        exit 1;
+    else
+        echo "Validation: SUCCESS";
     fi;
+EOD
     
 EXPOSE 80 443
     
