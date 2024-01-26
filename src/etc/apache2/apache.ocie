@@ -37,8 +37,6 @@ function app_test()
     CFG_PASS="Syntax OK";
     CFG_RESULT=$(echo "$CFG_TEST" | grep "$CFG_PASS");
     if [[ -z "$CFG_RESULT" ]];then
-        echo "$CFG_RESULT";
-    else 
-        echo "true";
+        echo "$CFG_TEST";
     fi;
 }
