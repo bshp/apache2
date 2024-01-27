@@ -19,7 +19,7 @@ jobs:
         docker login -u $DOCKER_USER -p $DOCKER_TOKEN
     - name: Build 22.04
       run: |
-        docker build . --pull --build-arg VERSION=22.04 --tag bshp/apache2:latest --no-cache
+        docker build . --pull --build-arg OCIE_VERSION=22.04 --tag bshp/apache2:latest --no-cache
     - name: Push 22.04
       run: |
         docker tag bshp/apache2:latest bshp/apache2:22.04
@@ -27,7 +27,7 @@ jobs:
         docker push bshp/apache2:22.04
     - name: Build 24.04
       run: |
-        docker build . --pull --build-arg VERSION=24.04 --tag bshp/apache2:24.04 --no-cache
+        docker build . --pull --build-arg OCIE_VERSION=24.04 --tag bshp/apache2:24.04 --no-cache
     - name: Push 24.04
       run: |
         docker push bshp/apache2:24.04
