@@ -61,6 +61,7 @@ COPY --chown=root:root --chmod=0755 ./src/etc/apache2/ ./etc/apache2/
 # Ensure Apache2 Starts
 RUN <<"EOD" bash
     set -eu;
+    echo "${OCIE_CONFIG}";
     echo "Validating Apache2 configuration";
     APACHE_TEST=$(ociectl --test);
     if [[ ! -z "$APACHE_TEST" ]];then
