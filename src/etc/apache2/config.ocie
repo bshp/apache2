@@ -24,7 +24,7 @@ function app_certs()
     
 function app_config()
 {
-    ${OCIE_LIB}/include/apache;
+    ${OCIE_LIB}/include/config/apache;
 }
     
 function app_update()
