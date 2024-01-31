@@ -34,7 +34,7 @@ ENV REWRITE_INDEX=""
 RUN <<"EOD" bash
     set -eu;
     # Add packages
-    ocie --dhparams "-size ${DH_PARAM_SIZE}" --pkg "-add apache2,libapache2-mod-jk" --keys "-subject ${CERT_SUBJECT} -tag 'default.keys'";
+    ocie --dhparams "-size ${DH_PARAM_SIZE}" --pkg "-add apache2,libapache2-mod-jk" --keys "-subject ${CERT_SUBJECT} -tag default.keys";
     # Apache Cleanup
     a2enmod -q headers remoteip rewrite ssl unique_id >/dev/null;
     a2dismod -q info jk status >/dev/null;
