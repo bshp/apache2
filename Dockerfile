@@ -17,9 +17,10 @@ ENV APACHE_SITES=/etc/apache2/sites-enabled
 # Ocie
 ENV OCIE_CONFIG=/etc/apache2
 ENV APP_TYPE="apache"
-ENV APP_DATA=/var/www/data
 ENV APP_GROUP="www-data"
 ENV APP_OWNER="www-data"
+ENV APP_HOME=/var/www/html
+ENV APP_DATA=/var/www/data
 ENV CA_ENABLED=1
 ENV CA_UPDATE_OS=1
 ENV CERT_ENABLED=1
