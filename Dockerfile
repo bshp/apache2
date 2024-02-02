@@ -1,21 +1,13 @@
 # Ocie Version, e.g 22.04 unquoted
 ARG OCIE_VERSION
     
-# Optional: Change Timezone
-ARG TZ=America/North_Dakota/Center
-    
 FROM bshp/ocie:${OCIE_VERSION}
-    
-LABEL org.opencontainers.image.authors="jason.everling@gmail.com"
-    
-ARG TZ
     
 ENV APACHE_LOG=/var/log/apache2 \
     APACHE_CONF=/etc/apache2/conf-include \
     APACHE_MODS=/etc/apache2/mods-include \
-    APACHE_SITES=/etc/apache2/sites-enabled
-# Ocie
-ENV OCIE_CONFIG=/etc/apache2 \
+    APACHE_SITES=/etc/apache2/sites-enabled \
+    OCIE_CONFIG=/etc/apache2 \
     APP_TYPE="apache" \
     APP_GROUP="www-data" \
     APP_OWNER="www-data" \
