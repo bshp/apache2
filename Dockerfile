@@ -10,26 +10,26 @@ LABEL org.opencontainers.image.authors="jason.everling@gmail.com"
     
 ARG TZ
     
-ENV APACHE_LOG=/var/log/apache2
-ENV APACHE_CONF=/etc/apache2/conf-include
-ENV APACHE_MODS=/etc/apache2/mods-include
-ENV APACHE_SITES=/etc/apache2/sites-enabled
+ENV APACHE_LOG=/var/log/apache2 \
+    APACHE_CONF=/etc/apache2/conf-include \
+    APACHE_MODS=/etc/apache2/mods-include \
+    APACHE_SITES=/etc/apache2/sites-enabled
 # Ocie
-ENV OCIE_CONFIG=/etc/apache2
-ENV APP_TYPE="apache"
-ENV APP_GROUP="www-data"
-ENV APP_OWNER="www-data"
-ENV APP_HOME=/var/www/html
-ENV APP_DATA=/var/www/data
-ENV CA_ENABLED=1
-ENV CA_UPDATE_OS=1
-ENV CERT_ENABLED=1
-ENV REWRITE_ENABLED=0
-ENV REWRITE_CORS=1
-ENV REWRITE_DEFAULT=0
-ENV REWRITE_EXCLUDE=""
-ENV REWRITE_EXT=""
-ENV REWRITE_INDEX=""
+ENV OCIE_CONFIG=/etc/apache2 \
+    APP_TYPE="apache" \
+    APP_GROUP="www-data" \
+    APP_OWNER="www-data" \
+    APP_HOME=/var/www/html \
+    APP_DATA=/var/www/data \
+    CA_ENABLED=1 \
+    CA_UPDATE_OS=1 \
+    CERT_ENABLED=1 \
+    REWRITE_ENABLED=0 \
+    REWRITE_CORS=1 \
+    REWRITE_DEFAULT=0 \
+    REWRITE_EXCLUDE="" \
+    REWRITE_EXT="" \
+    REWRITE_INDEX=""
     
 # Initial Setup for Apache2
 RUN <<"EOD" bash
