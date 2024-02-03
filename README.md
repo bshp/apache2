@@ -44,15 +44,15 @@ see [Ocie Environment](https://github.com/bshp/ocie/blob/main/Environment.md) fo
     
 #### Direct:  
 ````
-docker run --entrypoint /usr/local/bin/ociectl -d bshp/apache2:latest --run
+docker run --entrypoint /usr/sbin/ociectl -d bshp/apache2:latest --run
 ````
 #### Custom:  
 Add at end of your entrypoint script either of:  
 ````
-/usr/local/bin/ociectl --run;
+/usr/sbin/ociectl --run;
 ````
 ````
-apachectl -k start -D FOREGROUND;
+/usr/sbin/apachectl -k start -D FOREGROUND;
 ````
     
 #### Build:  
