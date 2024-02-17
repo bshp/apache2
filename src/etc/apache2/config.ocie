@@ -13,8 +13,9 @@ function app_reload()
     
 function app_start()
 {
-   /usr/sbin/apachectl -k start -D FOREGROUND;
-   #tail -f ${APACHE_LOG}/httpd.log
+    /usr/sbin/apachectl -k start;
+    sleep 5;
+    echo $(cat ${APACHE_PID});
 }
     
 function app_certs()

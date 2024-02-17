@@ -3,11 +3,13 @@ ARG OCIE_VERSION
     
 FROM bshp/ocie:${OCIE_VERSION}
     
-ENV APACHE_LOG=/var/log/apache2 \
+ENV OCIE_CONFIG=/etc/apache2 \
+    APACHE_LOG=/var/log/apache2 \
     APACHE_CONF=/etc/apache2/conf-include \
     APACHE_MODS=/etc/apache2/mods-include \
     APACHE_SITES=/etc/apache2/sites-enabled \
-    OCIE_CONFIG=/etc/apache2 \
+    APACHE_RUN=/var/run/apache2 \
+    APACHE_PID=/var/run/apache2/apache2.pid \
     APP_TYPE="apache" \
     APP_GROUP="www-data" \
     APP_OWNER="www-data" \
