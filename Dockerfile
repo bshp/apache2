@@ -38,7 +38,7 @@ RUN <<"EOD" bash
 EOD
     
 # Configs and Scripts
-COPY --chown=root:root --chmod=0755 ./src/etc/apache2/ ./etc/apache2/
+COPY --chown=root:root --chmod=0755 ./src/ ./
     
 # Ensure Apache2 Starts
 RUN <<"EOD" bash
