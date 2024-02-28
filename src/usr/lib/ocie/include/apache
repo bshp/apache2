@@ -1,0 +1,107 @@
+#!/bin/bash
+    
+function add_default()
+{
+    cp "${APACHE_MODS}/rewrite_default.conf.dist" "${APACHE_MODS}/rewrite.conf";
+}
+    
+function add_framework()
+{
+    cp "${APACHE_MODS}/rewrite_framework.conf.dist" "${APACHE_MODS}/rewrite.conf";
+    sed -i "s/#FRAMEWORK/${REWRITE_INDEX}/g" "${APACHE_MODS}/rewrite.conf";
+}
+    
+function add_exclude()
+{
+    sed -i "s@#REWRITE_EXCLUDE@$(printf %q "        RewriteRule ${REWRITE_EXCLUDE} - [L]")@g" "${APACHE_MODS}/rewrite.conf";
+}
+    
+function add_extension()
+{
+    cp "${APACHE_MODS}/rewrite_extensions.conf.dist" "${APACHE_MODS}/rewrite.conf";
+    sed -i "s/#EXTENSION/${REWRITE_EXT}/g" "${APACHE_MODS}/rewrite.conf";
+}
+    
+function add_cors()
+{
+    cp "${APACHE_MODS}/headers_cors_json.conf.dist" "${APACHE_MODS}/headers.conf";
+}
+    
+function reset_config()
+{
+    local site_template=/etc/apache2/sites-available;
+    if [[ -f "${APACHE_MODS}/rewrite.conf" ]];then
+        mv -f "${APACHE_MODS}/rewrite.conf" "${APACHE_MODS}/rewrite.conf.previous";
+    fi;
+    if [[ -f "${APACHE_MODS}/headers.conf" ]];then
+        mv -f "${APACHE_MODS}/headers.conf" "${APACHE_MODS}/headers.conf.previous";
+    fi;
+    if [[ -f "${APACHE_MODS}/jk.conf" ]];then
+        mv -f "${APACHE_MODS}/jk.conf" "${APACHE_MODS}/jk.conf.previous";
+    fi;
+    if [[ -f "${APACHE_MODS}/jk.load" ]];then
+        mv -f "${APACHE_MODS}/jk.load" "${APACHE_MODS}/jk.load.previous";
+    fi;
+    if [[ -f "${APACHE_SITES}/000-default.conf" ]];then
+        mv -f "${APACHE_SITES}/000-default.conf" "${APACHE_SITES}/000-default.conf.previous";
+        cp -f "${site_template}/000-default.conf.dist" "${APACHE_SITES}/000-default.conf";
+    fi;
+    if [[ -f "${APACHE_SITES}/default-ssl.conf" ]];then
+        mv -f "${APACHE_SITES}/default-ssl.conf" "${APACHE_SITES}/default-ssl.conf.previous";
+        cp -f "${site_template}/default-ssl.conf.dist" "${APACHE_SITES}/default-ssl.conf";
+    fi;
+}
+    
+#Run
+if [[ -f "${OCIE_HOME}/conf/ocie-apache.init" ]];then
+    reset_config;
+fi;
+    
+if [[ "${REWRITE_ENABLED}" == 0 ]];then
+    echo "Ocie: Config: Rewrite is DISABLED, set REWRITE_ENABLED=1 in order activate, skipping";
+else
+    #Enable Rewrite Engine
+    sed -i "s/#REWRITE/RewriteEngine On/g" "${APACHE_SITES}/000-default.conf";
+    sed -i "s/#REWRITE/RewriteEngine On/g" "${APACHE_SITES}/default-ssl.conf";
+    
+    if [[ "${REWRITE_DEFAULT}" == 1 ]];then
+        echo "Ocie: Config: Rewriting all requests to: [ https ]";
+        add_default;
+    fi;
+    if [[ ! -z "${REWRITE_INDEX}" ]];then
+        echo "Ocie: Config: Rewriting all requests to: [ ${REWRITE_INDEX} ]";
+        add_framework;
+    fi;
+    if [[ "${REWRITE_CORS}" == 1 ]];then
+        echo "Ocie: Config: Adding CORS config for JSON to enabled site";
+        add_cors;
+    fi;
+    if [[ ! -z "${REWRITE_EXT}" ]];then
+        if [[ ! -z "${REWRITE_INDEX}" ]];then
+            echo "Ocie: Config: Cannot configure both [ REWRITE_INDEX ] and [ REWRITE_EXT ], using [ REWRITE_INDEX ], value ${REWRITE_INDEX}";
+        else
+            echo "Ocie: Config: Rewriting all requests with the following extensions: [ ${REWRITE_EXT} ]";
+            add_extension;
+        fi;
+    fi;
+    if [[ ! -z "${REWRITE_EXCLUDE}" ]];then
+        echo "Ocie: Config: Ecluding the following pattern from rewrite: [ ${REWRITE_EXCLUDE} ]";
+        add_exclude;
+    fi;
+fi;
+    
+# Test config and print results
+# Tomcat sources this script, only print if apache
+if [[ ! "${APP_TYPE}" == "tomcat" ]];then
+    httpd_cfg=$(ociectl --test);
+    if [[ ! -z "${httpd_cfg}" ]];then
+        echo "Ocie: Config: Test FAILED, reverting changes";
+        echo "Ocie: Config: Result: ${httpd_cfg}";
+        reset_config;
+        exit 1;
+    fi;
+    echo "Ocie: Config: Data directory for application is ${APP_DATA}";
+    echo "Ocie: Config: Apache Config Test PASSED, using updated configuration";
+    echo "Ocie: Config: Apache2 remoteip configured with [address: ${VADC_IP_ADDRESS}, header: ${VADC_IP_HEADER}]";
+fi;
+echo "#Apache Initialized" > ${OCIE_HOME}/conf/ocie-apache.init;
