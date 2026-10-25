@@ -12,14 +12,14 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_USER }}
         password: ${{ secrets.DOCKER_TOKEN }}
-    - name: Build 22.04
+    - name: Build 26.04
       run: |
-        docker build . --pull --build-arg OCIE_VERSION=22.04 --tag bshp/apache2:latest --no-cache
-    - name: Push 22.04
+        docker build . --pull --build-arg OCIE_VERSION=26.04 --tag bshp/apache2:latest --no-cache
+    - name: Push 26.04
       run: |
-        docker tag bshp/apache2:latest bshp/apache2:22.04
+        docker tag bshp/apache2:latest bshp/apache2:26.04
         docker push bshp/apache2:latest
-        docker push bshp/apache2:22.04
+        docker push bshp/apache2:26.04
     - name: Build Firefly
       run: |
         curl -L -X POST \
